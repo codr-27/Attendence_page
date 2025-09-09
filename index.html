@@ -33,7 +33,7 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .camera-placeholder {
+        .camera-container {
             width: 100%;
             max-width: 250px;
             height: 250px;
@@ -42,19 +42,20 @@
             background-color: #e5e7eb;
             position: relative;
             overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .camera-container video {
             width: 100%;
-            height: 3px;
-            background: #3b82f6;
-            animation: scan 2s linear infinite;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            transform: scaleX(-1);
         }
-        @keyframes scan {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(250px); }
+        .checkmark-icon {
+            font-size: 80px;
+            color: #10b981;
         }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     </style>
@@ -88,7 +89,7 @@
             <header class="flex justify-between items-center mb-6">
                 <div>
                     <h1 class="text-2xl font-bold text-blue-600">Faculty Dashboard</h1>
-                    <p class="text-gray-500">Welcome, Mr. Sreesh Gaur </p>
+                    <p class="text-gray-500">Welcome, Mr. Sreesh Gaur</p>
                 </div>
                 <button onclick="goHome()" class="text-sm text-blue-500 hover:underline">Back to Home</button>
             </header>
@@ -100,13 +101,13 @@
                         <div class="p-4 border rounded-lg flex justify-between items-center">
                             <div>
                                 <p class="font-bold">BCS501 - Database Management System</p>
-                                <p class="text-sm text-gray-500">B.Tech CSE 3rd Year | 72 Students</p>
+                                <p class="text-sm text-gray-500">B.Tech CS 3rd Year | 72 Students</p>
                             </div>
-                            <button onclick="startSession('CS305')" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">Start Session</button>
+                            <button onclick="startSession('BCS501')" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">Start Session</button>
                         </div>
                         <div class="p-4 border rounded-lg flex justify-between items-center bg-gray-50 text-gray-400">
                             <div>
-                                <p class="font-bold">BCS502 - Data Structure and Algorithm</p>
+                                <p class="font-bold">BCS055 - Machine Learning Technologies</p>
                                 <p class="text-sm">Session Completed</p>
                             </div>
                             <button class="bg-gray-300 text-white font-semibold py-2 px-4 rounded-lg cursor-not-allowed">Completed</button>
@@ -117,7 +118,7 @@
 
             <div id="faculty-session" class="screen">
                 <div class="bg-white p-6 rounded-2xl shadow-lg">
-                    <h2 class="text-lg font-semibold mb-1" id="session-title">Live Attendance Session: BCS503</h2>
+                    <h2 class="text-lg font-semibold mb-1" id="session-title">Live Attendance Session: CS305</h2>
                     <p class="text-sm text-gray-500 mb-4">Share this OTP with students in the classroom.</p>
                     <div class="text-center bg-gray-100 p-6 rounded-lg mb-6">
                         <p class="text-gray-600 text-sm">SESSION OTP</p>
@@ -209,20 +210,21 @@
                     <div id="step-face" class="step">
                         <h3 class="font-semibold mb-2">Step 3: Facial Recognition</h3>
                         <p class="text-gray-500 mb-4 text-sm">Please align your face within the circle and hold still.</p>
-                        <div class="camera-placeholder mx-auto mb-4">
-                            <div class="scan-line"></div>
+                        <div class="camera-container mx-auto mb-4">
+                            <video id="camera-feed" class="w-full h-full object-cover rounded-full transform scale-x-[-1]" autoplay playsinline></video>
+                            <div id="face-matched-status" class="absolute inset-0 bg-green-100 flex-col items-center justify-center rounded-full hidden">
+                                <span class="checkmark-icon">✓</span>
+                                <span class="mt-2 font-semibold text-green-600">Face Matched</span>
+                            </div>
                         </div>
-                        <p id="face-status" class="text-sm font-medium">Scanning...</p>
+                        <p id="face-status" class="text-sm font-medium">Requesting camera access...</p>
                     </div>
-
-                    <!-- Step 4: Success -->
-                    <div id="step-success" class="step">
-                         <div class="mx-auto bg-green-100 rounded-full h-24 w-24 flex items-center justify-center">
-                            <span class="text-5xl text-green-600">✓</span>
-                        </div>
-                        <h3 class="font-semibold text-2xl mt-6">Attendance Marked!</h3>
-                        <p class="text-gray-500 mt-2">You have been successfully marked present for CS305.</p>
-                        <button onclick="goHome()" class="mt-6 bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors">Go to Dashboard</button>
+                    
+                    <!-- Final Success Message -->
+                    <div id="success-message" class="hidden mt-6">
+                        <h3 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Attendance Marked!</h3>
+                        <p class="text-gray-600 text-sm md:text-base">You have been successfully marked present for CS305.</p>
+                        <button onclick="goHome()" class="mt-6 bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-colors">Back to Dashboard</button>
                     </div>
                 </div>
             </div>
@@ -236,10 +238,11 @@
         let studentAttendanceChart = null;
         let simulationInterval = null;
         let otpTimerInterval = null;
+        let cameraStream = null;
 
         const studentsData = [
-            "Pradeep Singh", "Nikhil Kanaujia", "Saurabh Pandey", "Pratul Tiwari", "Preeti Mandal",
-            "Rohit Verma",
+            "Pradeep Singh", "Saurabh Pandey", "Nikhil Kanaujia", "Preeti Mandal", "Pratul Tiwari",
+            "Rohit Verma",   
         ].map(name => ({ name, present: false }));
 
         function showScreen(portalId, screenId) {
@@ -257,12 +260,19 @@
         function goHome() {
             clearInterval(simulationInterval);
             clearInterval(otpTimerInterval);
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
             document.getElementById('role-selection').classList.add('active-screen');
             // Reset states
             studentsData.forEach(s => s.present = false);
             if(attendanceChart) attendanceChart.destroy();
             if(studentAttendanceChart) studentAttendanceChart.destroy();
+             // Reset face scan status
+            document.getElementById('face-matched-status').classList.add('hidden');
+            document.getElementById('success-message').classList.add('hidden');
+            document.getElementById('camera-feed').style.display = 'block';
         }
 
         function selectRole(role) {
@@ -377,13 +387,33 @@
             const present = 85;
             const absent = 15;
             if(studentAttendanceChart) studentAttendanceChart.destroy();
+
+            const centerTextPlugin = {
+                id: 'centerText',
+                beforeDraw: function(chart) {
+                    const width = chart.width;
+                    const height = chart.height;
+                    const ctx = chart.ctx;
+                    ctx.restore();
+                    const fontSize = (height / 114).toFixed(2);
+                    ctx.font = `bold ${fontSize}em sans-serif`;
+                    ctx.textBaseline = 'middle';
+                    const text = '85%';
+                    const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                    const textY = height / 2;
+                    ctx.fillStyle = '#4b5563';
+                    ctx.fillText(text, textX, textY);
+                    ctx.save();
+                }
+            };
+
             studentAttendanceChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Present', 'Absent'],
                     datasets: [{
                         data: [present, absent],
-                        backgroundColor: ['#10b981', '#ef4444'],
+                        backgroundColor: ['#34d399', '#fca5a5'],
                         borderColor: ['#ffffff'],
                         borderWidth: 2
                     }]
@@ -394,24 +424,10 @@
                     cutout: '70%',
                     plugins: {
                         legend: { display: false },
-                        tooltip: { enabled: true },
-                        datalabels: {
-                            color: '#4b5563',
-                            textAlign: 'center',
-                            font: {
-                                size: 24,
-                                weight: 'bold'
-                            },
-                            formatter: (value, context) => {
-                                const percentage = context.chart.data.datasets[0].data[0] + context.chart.data.datasets[0].data[1];
-                                if (context.dataIndex === 0) {
-                                  return (value / percentage * 100).toFixed(0) + '%';
-                                }
-                                return '';
-                            }
-                        }
+                        tooltip: { enabled: true }
                     }
-                }
+                },
+                plugins: [centerTextPlugin]
             });
         }
 
@@ -463,11 +479,34 @@
 
         function startFaceScan() {
             const faceStatus = document.getElementById('face-status');
-            setTimeout(() => {
-                faceStatus.innerText = '✓ Face Matched';
-                faceStatus.classList.add('text-green-600');
-                 setTimeout(() => showStep('step-success'), 1500);
-            }, 3000);
+            const videoElement = document.getElementById('camera-feed');
+            const matchedStatus = document.getElementById('face-matched-status');
+            const successMessage = document.getElementById('success-message');
+            
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    videoElement.srcObject = stream;
+                    cameraStream = stream;
+                    faceStatus.innerText = 'Scanning...';
+                    setTimeout(() => {
+                        faceStatus.classList.add('hidden');
+                        if (cameraStream) {
+                            cameraStream.getTracks().forEach(track => track.stop());
+                        }
+                        videoElement.classList.add('hidden');
+                        matchedStatus.classList.remove('hidden');
+                        matchedStatus.style.display = 'flex';
+                        setTimeout(() => {
+                             matchedStatus.classList.add('hidden');
+                             successMessage.classList.remove('hidden');
+                        }, 1000);
+                    }, 3000);
+                })
+                .catch(err => {
+                    faceStatus.innerText = 'Camera access denied. Please grant permission to continue.';
+                    faceStatus.classList.add('text-red-500');
+                    console.error("Error accessing the camera: ", err);
+                });
         }
 
         window.onload = () => {

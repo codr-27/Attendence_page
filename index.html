@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.M.A.S.C. - Interactive Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as a role-based, multi-screen simulation. Users first select a role (Student or Faculty). The application then uses JavaScript to show/hide different 'screens' (divs) to guide the user through a linear workflow specific to that role. This structure was chosen because it's the most effective way to demonstrate the distinct user journeys and core functionalities (OTP generation for faculty, multi-factor verification for students) in a clear, step-by-step manner for a presentation, mimicking a real application's flow without needing multiple pages. -->
+    <!-- Visualization & Content Choices:
+        - Faculty Live Attendance: Report Info -> Real-time class attendance status. Goal -> Compare present vs. absent. Viz -> Donut Chart (Chart.js) and a dynamic list. Interaction -> The chart and list update automatically (simulated) to show live changes. Justification -> A donut chart provides an immediate, high-impact visual summary of class status, superior to just a list.
+        - Student Attendance Summary: Report Info -> Student's overall attendance. Goal -> Inform the student of their standing. Viz -> Donut Chart (Chart.js). Interaction -> Static display. Justification -> Visually represents the student's performance, which is more engaging than a simple percentage number.
+        - Verification Flow: Report Info -> OTP, GPS, Face Scan steps. Goal -> Organize the process. Presentation -> Step-by-step wizard using HTML/CSS/JS. Interaction -> User clicks buttons to proceed through the simulated checks. Justification -> Clearly breaks down the multi-factor authentication process for the audience.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .screen { display: none; }
+        .active-screen { display: block; }
+        .step { display: none; }
+        .active-step { display: block; }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .camera-placeholder {
+            width: 100%;
+            max-width: 250px;
+            height: 250px;
+            border: 2px dashed #9ca3af;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #3b82f6;
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(250px); }
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="app" class="max-w-4xl mx-auto p-4 md:p-8">
+
+        <!-- Role Selection Screen -->
+        <div id="role-selection" class="screen active-screen text-center">
+            <header class="mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-blue-600">A.M.A.S.C.</h1>
+                <p class="text-gray-600 mt-2">Automated Student Attendance Monitoring & Analytics System</p>
+                <p class="text-gray-500 text-sm">Interactive Prototype</p>
+            </header>
+            <div class="bg-white p-8 rounded-2xl shadow-lg">
+                <h2 class="text-xl font-semibold mb-6">Select Your Role to Begin</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <button onclick="selectRole('faculty')" class="w-full bg-blue-500 text-white font-semibold py-4 px-6 rounded-xl hover:bg-blue-600 transition-colors duration-300 shadow-md">
+                        I am a Faculty Member
+                    </button>
+                    <button onclick="selectRole('student')" class="w-full bg-green-500 text-white font-semibold py-4 px-6 rounded-xl hover:bg-green-600 transition-colors duration-300 shadow-md">
+                        I am a Student
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Faculty Portal -->
+        <div id="faculty-portal" class="screen">
+            <header class="flex justify-between items-center mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-600">Faculty Dashboard</h1>
+                    <p class="text-gray-500">Welcome, Dr. Evelyn Reed</p>
+                </div>
+                <button onclick="goHome()" class="text-sm text-blue-500 hover:underline">Back to Home</button>
+            </header>
+
+            <div id="faculty-classes" class="active-screen">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-lg font-semibold mb-4 border-b pb-2">Your Classes for Today</h2>
+                    <div class="space-y-4">
+                        <div class="p-4 border rounded-lg flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">CS305 - Software Engineering</p>
+                                <p class="text-sm text-gray-500">B.Tech CSE 3rd Year | 65 Students</p>
+                            </div>
+                            <button onclick="startSession('CS305')" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">Start Session</button>
+                        </div>
+                        <div class="p-4 border rounded-lg flex justify-between items-center bg-gray-50 text-gray-400">
+                            <div>
+                                <p class="font-bold">MBA201 - Marketing Principles</p>
+                                <p class="text-sm">Session Completed</p>
+                            </div>
+                            <button class="bg-gray-300 text-white font-semibold py-2 px-4 rounded-lg cursor-not-allowed">Completed</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="faculty-session" class="screen">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-lg font-semibold mb-1" id="session-title">Live Attendance Session: CS305</h2>
+                    <p class="text-sm text-gray-500 mb-4">Share this OTP with students in the classroom.</p>
+                    <div class="text-center bg-gray-100 p-6 rounded-lg mb-6">
+                        <p class="text-gray-600 text-sm">SESSION OTP</p>
+                        <p id="otp-display" class="text-5xl font-bold tracking-widest text-blue-600">----</p>
+                        <p class="text-xs text-gray-500 mt-2">Expires in: <span id="otp-timer">0:10</span></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-1">
+                            <h3 class="font-semibold mb-2">Live Status</h3>
+                            <div class="chart-container mx-auto" style="position: relative; height:200px; width:200px">
+                                <canvas id="attendanceChart"></canvas>
+                            </div>
+                            <div class="flex justify-center items-center gap-4 mt-2">
+                                <div class="flex items-center">
+                                    <div class="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
+                                    <p class="text-sm">Present: <span class="font-bold" id="present-count">0</span></p>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
+                                    <p class="text-sm">Absent: <span class="font-bold" id="absent-count">65</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <h3 class="font-semibold mb-2">Student List</h3>
+                            <div id="student-list" class="h-64 overflow-y-auto border rounded-lg p-2 bg-gray-50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 text-center">
+                        <button onclick="goHome()" class="bg-red-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-600 transition-colors">End Session</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Portal -->
+        <div id="student-portal" class="screen">
+            <header class="flex justify-between items-center mb-6">
+                 <div>
+                    <h1 class="text-2xl font-bold text-green-600">Student Portal</h1>
+                    <p class="text-gray-500">Welcome, Alex Johnson</p>
+                </div>
+                <button onclick="goHome()" class="text-sm text-blue-500 hover:underline">Back to Home</button>
+            </header>
+
+            <div id="student-dashboard" class="screen active-screen">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div>
+                             <h2 class="text-lg font-semibold mb-2">Overall Attendance</h2>
+                             <div class="chart-container mx-auto" style="position: relative; height:180px; width:180px">
+                                <canvas id="studentAttendanceChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                            <h2 class="font-semibold text-blue-800">Active Session Happening Now!</h2>
+                            <p class="text-gray-700 mt-1">CS305 - Software Engineering</p>
+                            <button onclick="startAttendanceProcess()" class="mt-4 w-full bg-green-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-600 transition-colors">Mark My Attendance</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="student-attendance-flow" class="screen">
+                <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
+                    <h2 class="text-xl font-semibold mb-6">Attendance Verification</h2>
+
+                    <!-- Step 1: Location -->
+                    <div id="step-location" class="step active-step">
+                        <h3 class="font-semibold mb-2">Step 1: Verifying Your Location</h3>
+                        <p class="text-gray-500 mb-4 text-sm">Please ensure you are connected to the class Wi-Fi.</p>
+                        <div class="loader mx-auto"></div>
+                        <p id="location-status" class="mt-4 text-sm font-medium"></p>
+                    </div>
+
+                    <!-- Step 2: OTP -->
+                    <div id="step-otp" class="step">
+                        <h3 class="font-semibold mb-2">Step 2: Enter OTP</h3>
+                        <p class="text-gray-500 mb-4 text-sm">Enter the 4-digit code provided by your faculty.</p>
+                        <input type="text" id="otp-input" maxlength="4" class="text-center text-2xl tracking-widest font-bold w-48 p-3 border-2 rounded-lg focus:border-blue-500 focus:outline-none" placeholder="----">
+                        <button onclick="verifyOtp()" class="mt-4 w-full max-w-xs mx-auto block bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">Verify OTP</button>
+                        <p id="otp-status" class="mt-2 text-sm h-5"></p>
+                    </div>
+
+                    <!-- Step 3: Face Scan -->
+                    <div id="step-face" class="step">
+                        <h3 class="font-semibold mb-2">Step 3: Facial Recognition</h3>
+                        <p class="text-gray-500 mb-4 text-sm">Please align your face within the circle and hold still.</p>
+                        <div class="camera-placeholder mx-auto mb-4">
+                            <div class="scan-line"></div>
+                        </div>
+                        <p id="face-status" class="text-sm font-medium">Scanning...</p>
+                    </div>
+
+                    <!-- Step 4: Success -->
+                    <div id="step-success" class="step">
+                         <div class="mx-auto bg-green-100 rounded-full h-24 w-24 flex items-center justify-center">
+                            <span class="text-5xl text-green-600">✓</span>
+                        </div>
+                        <h3 class="font-semibold text-2xl mt-6">Attendance Marked!</h3>
+                        <p class="text-gray-500 mt-2">You have been successfully marked present for CS305.</p>
+                        <button onclick="goHome()" class="mt-6 bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-600 transition-colors">Go to Dashboard</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        let currentRole = null;
+        let attendanceChart = null;
+        let studentAttendanceChart = null;
+        let simulationInterval = null;
+        let otpTimerInterval = null;
+
+        const studentsData = [
+            "Pradeep Singh", "Saurabh Pandey", "Nikhil Kanaujiya", "Pratul Tiwari", "Preeti Mandel",
+            "Rohit Verma",
+        ].map(name => ({ name, present: false }));
+
+        function showScreen(portalId, screenId) {
+            document.querySelectorAll(`#${portalId} .screen`).forEach(screen => {
+                screen.classList.remove('active-screen');
+                screen.classList.add('screen');
+            });
+            const targetScreen = document.getElementById(screenId);
+            if(targetScreen) {
+                targetScreen.classList.remove('screen');
+                targetScreen.classList.add('active-screen');
+            }
+        }
+
+        function goHome() {
+            clearInterval(simulationInterval);
+            clearInterval(otpTimerInterval);
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active-screen'));
+            document.getElementById('role-selection').classList.add('active-screen');
+            // Reset states
+            studentsData.forEach(s => s.present = false);
+            if(attendanceChart) attendanceChart.destroy();
+            if(studentAttendanceChart) studentAttendanceChart.destroy();
+        }
+
+        function selectRole(role) {
+            currentRole = role;
+            document.getElementById('role-selection').classList.remove('active-screen');
+            if (role === 'faculty') {
+                document.getElementById('faculty-portal').classList.add('active-screen');
+                showScreen('faculty-portal', 'faculty-classes');
+            } else {
+                document.getElementById('student-portal').classList.add('active-screen');
+                showScreen('student-portal', 'student-dashboard');
+                renderStudentChart();
+            }
+        }
+
+        function startSession(className) {
+            showScreen('faculty-portal', 'faculty-session');
+            document.getElementById('session-title').innerText = `Live Attendance Session: ${className}`;
+            renderFacultyChart(0);
+            updateStudentList();
+
+            const otpDisplay = document.getElementById('otp-display');
+            otpDisplay.innerText = Math.floor(1000 + Math.random() * 9000);
+
+            let timer = 10;
+            const timerDisplay = document.getElementById('otp-timer');
+            timerDisplay.textContent = `0:${timer < 10 ? '0' : ''}${timer}`;
+
+            otpTimerInterval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                if (--timer < 0) {
+                    clearInterval(otpTimerInterval);
+                    timerDisplay.textContent = "EXPIRED";
+                    otpDisplay.classList.add('text-red-500');
+                }
+            }, 1000);
+
+            simulationInterval = setInterval(() => {
+                const unMarkedStudents = studentsData.filter(s => !s.present);
+                if (unMarkedStudents.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * unMarkedStudents.length);
+                    unMarkedStudents[randomIndex].present = true;
+                    updateStudentList();
+                    const presentCount = studentsData.filter(s => s.present).length;
+                    renderFacultyChart(presentCount);
+                } else {
+                    clearInterval(simulationInterval);
+                }
+            }, 2000);
+        }
+
+        function updateStudentList() {
+            const listElement = document.getElementById('student-list');
+            listElement.innerHTML = '';
+            const sortedStudents = [...studentsData].sort((a, b) => {
+                if (a.present && !b.present) return -1;
+                if (!a.present && b.present) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            sortedStudents.forEach(student => {
+                const div = document.createElement('div');
+                div.className = `p-2 flex items-center justify-between text-sm ${student.present ? 'bg-green-100' : ''}`;
+                div.innerText = student.name;
+
+                const statusSpan = document.createElement('span');
+                statusSpan.className = `font-bold ${student.present ? 'text-green-600' : 'text-red-600'}`;
+                statusSpan.innerText = student.present ? '✓ Present' : 'Absent';
+                div.appendChild(statusSpan);
+
+                listElement.appendChild(div);
+            });
+            const presentCount = studentsData.filter(s => s.present).length;
+            document.getElementById('present-count').innerText = presentCount;
+            document.getElementById('absent-count').innerText = studentsData.length - presentCount;
+        }
+
+        function renderFacultyChart(presentCount) {
+             const ctx = document.getElementById('attendanceChart').getContext('2d');
+             if (attendanceChart) {
+                attendanceChart.data.datasets[0].data = [presentCount, studentsData.length - presentCount];
+                attendanceChart.update();
+             } else {
+                attendanceChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Present', 'Absent'],
+                        datasets: [{
+                            data: [presentCount, studentsData.length - presentCount],
+                            backgroundColor: ['#10b981', '#ef4444'],
+                            borderColor: ['#ffffff'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: true }
+                        }
+                    }
+                });
+             }
+        }
+
+        function renderStudentChart() {
+            const ctx = document.getElementById('studentAttendanceChart').getContext('2d');
+            const present = 85;
+            const absent = 15;
+            if(studentAttendanceChart) studentAttendanceChart.destroy();
+            studentAttendanceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Present', 'Absent'],
+                    datasets: [{
+                        data: [present, absent],
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        borderColor: ['#ffffff'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true },
+                        datalabels: {
+                            color: '#4b5563',
+                            textAlign: 'center',
+                            font: {
+                                size: 24,
+                                weight: 'bold'
+                            },
+                            formatter: (value, context) => {
+                                const percentage = context.chart.data.datasets[0].data[0] + context.chart.data.datasets[0].data[1];
+                                if (context.dataIndex === 0) {
+                                  return (value / percentage * 100).toFixed(0) + '%';
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function startAttendanceProcess() {
+            showScreen('student-portal', 'student-attendance-flow');
+            showStep('step-location');
+
+            const locationStatus = document.getElementById('location-status');
+            locationStatus.innerText = 'Checking GPS and Wi-Fi connection...';
+            setTimeout(() => {
+                locationStatus.innerText = '✓ Location Verified';
+                locationStatus.classList.add('text-green-600');
+                setTimeout(() => showStep('step-otp'), 1000);
+            }, 2000);
+        }
+
+        function showStep(stepId) {
+            document.querySelectorAll('#student-attendance-flow .step').forEach(step => {
+                step.classList.remove('active-step');
+                step.classList.add('step');
+            });
+            const targetStep = document.getElementById(stepId);
+            if(targetStep) {
+                targetStep.classList.remove('step');
+                targetStep.classList.add('active-step');
+            }
+        }
+
+        function verifyOtp() {
+            const otpInput = document.getElementById('otp-input').value;
+            const otpStatus = document.getElementById('otp-status');
+
+            if (otpInput.length === 4 && !isNaN(otpInput)) {
+                otpStatus.innerText = 'Verifying...';
+                otpStatus.classList.remove('text-red-500');
+                otpStatus.classList.add('text-gray-500');
+                setTimeout(() => {
+                    otpStatus.innerText = '✓ OTP Verified';
+                    otpStatus.classList.remove('text-gray-500');
+                    otpStatus.classList.add('text-green-600');
+                    setTimeout(() => showStep('step-face'), 1000);
+                    startFaceScan();
+                }, 1500);
+            } else {
+                otpStatus.innerText = 'Invalid OTP. Please enter 4 digits.';
+                otpStatus.classList.add('text-red-500');
+            }
+        }
+
+        function startFaceScan() {
+            const faceStatus = document.getElementById('face-status');
+            setTimeout(() => {
+                faceStatus.innerText = '✓ Face Matched';
+                faceStatus.classList.add('text-green-600');
+                 setTimeout(() => showStep('step-success'), 1500);
+            }, 3000);
+        }
+
+        window.onload = () => {
+             goHome();
+        };
+
+    </script>
+</body>
+</html>
